@@ -2,8 +2,11 @@ const express = require('express')
 const http = require('http')
 const { Server } = require('socket.io')
 const cors = require('cors')
+const dotenv =  require('dotenv')
 
-const PORT = 3211
+dotenv.config()
+
+const PORT = process.env.PORT || 3211
 
 const app = express()
 
