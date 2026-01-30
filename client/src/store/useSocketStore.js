@@ -14,7 +14,7 @@ export const useSocketStore = create((set, get) => ({
     connect: () => {
         if (get().isConnected) return
 
-        const socket = io('https://colab-drawing.onrender.com/')
+        const socket = io('https://colab-drawing-production-8385.up.railway.app/')
 
         socket.on('connect', () => {
             set({ isConnected: true })
