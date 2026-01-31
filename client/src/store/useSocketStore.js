@@ -1,20 +1,14 @@
 import { create } from "zustand";
-import { io } from "socket.io-client";
+import { socket } from '../socket/socket'
+
 
 export const useSocketStore = create((set, get) => ({
-
-    //statesss
-    socket: null,
     isConnected: false,
     channelId: null,
-    messages: ['rithick'],
-    //handeler
-
-    //on connect to socket
+    messages: [],
+    users: [],
     connect: () => {
         if (get().isConnected) return
-
-        const socket = io('https://colab-drawing-production-8385.up.railway.app/')
 
         socket.on('connect', () => {
             set({ isConnected: true })
@@ -26,21 +20,19 @@ export const useSocketStore = create((set, get) => ({
             console.log('socket disconnected to web server')
         })
 
-        set({ socket })
+        return socket
     },
 
     joinChannel: (channelId) => {
-        if (!get().isConnected && !channelId) return
-        const { socket } = get()
-        if (!socket) return
+        if (!socket && !channelId) return
         socket.emit('join-channel', channelId)
-        set({ channelId })
+        set({ channelId, messages: [] })
         console.log(`joined channel: ${channelId}`)
     },
 
     onSendMessage: (message) => {
         if (!get().isConnected && !get().channelId) return
-        const { socket, channelId } = get()
+        const { channelId } = get()
         if (!socket) return
         socket.emit('send-message', { channelId, message })
     },
@@ -48,8 +40,12 @@ export const useSocketStore = create((set, get) => ({
     onReceiveMessage: (message) => {
         set({ messages: [...get().messages, message] })
     },
-    
+
     setPreviosMessages: (previousMessages) => {
-        set({ messages: [...get().messages, ...previousMessages] })
+        set({ messages: previousMessages })
+    },
+
+    setCurrenChannelState: (channel_state) => {
+        set({ ...channel_state })
     }
 }))

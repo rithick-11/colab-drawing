@@ -1,66 +1,148 @@
-import React from 'react'
+import React, { useRef, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Container } from '../components'
+import { ChatBox, Container, RemoteMouseMove } from '../components'
 import { useSocketStore } from '../store/useSocketStore'
-import { useEffect } from 'react'
-import { useState } from 'react'
+import { socket } from '../socket/socket'
 
 const Canvaschannel = () => {
 
-  const { joinChannel, connect, messages, onSendMessage, socket, onReceiveMessage, setPreviosMessages } = useSocketStore()
-
+  const { joinChannel, connect, users, setCurrenChannelState } = useSocketStore()
   const { channelId } = useParams()
 
-  const [msg, setMsg] = useState('')
+  const canvaRef = useRef(null)
+  const cursorRef = useRef({})
+  const isDrawing = useRef(false)
+  const lastPos = useRef({ x: 0, y: 0 })
+
+  const onDrawing = (lastPos, currentPos) => {
+    const canvas = canvaRef.current
+    if (!canvas) return
+
+    const ctx = canvas.getContext('2d')
+    ctx.beginPath()
+    ctx.moveTo(lastPos.x, lastPos.y)
+    ctx.lineTo(currentPos.x, currentPos.y)
+    ctx.stroke()
+  }
+
+  console.log(users, 'users')
+
 
   useEffect(() => {
     connect()
     console.log('attempting to connect to socket server')
     joinChannel(channelId)
+    document.title = `Canvas - ${channelId}`
+
+    const handleRemoteDrawing = ({ lastPos, currentPos }) => {
+      console.log('someone is drawing', lastPos, currentPos)
+      onDrawing(lastPos, currentPos)
+    }
+
+    const handleRemoteUserMouseMove = (current_channel_state) => {
+      setCurrenChannelState(current_channel_state)
+    }
+
+    const handleAfterJoinChannel = (channel_state) => {
+      setCurrenChannelState(channel_state)
+    }
+
+    const handleOnRemoteuserDisconnect = ({ current_channel_state, user }) => {
+      setCurrenChannelState(current_channel_state)
+      console.log(`user disconnected: ${user.name}`)
+    }
+
+    if (socket) {
+      socket.on('after_join_channel', handleAfterJoinChannel)
+      socket.on('someone_drawing', handleRemoteDrawing)
+      socket.on('on-remote-user-mouse-move', handleRemoteUserMouseMove)
+      socket.on('user-disconnected', handleOnRemoteuserDisconnect)
+
+      socket.on('joined-new-user', (newUser) => {
+        console.log('new user joined:', newUser)
+      })
+    }
+
+    return () => {
+      socket.off("someone_drawing")
+      socket.off('on-remote-user-mouse-move')
+      socket.off('user-disconnected')
+      socket.off('after_join_channel')
+    }
   }, [])
 
 
+
+
   useEffect(() => {
-    if (!socket) return
+    const canvas = canvaRef.current
+    if (!canvas) return
 
-    const handelReciveMessage = (message) => {
-      console.log(`message received at client: ${message}`)
+    canvas.width = canvas.offsetWidth
+    canvas.height = canvas.offsetHeight
+
+    const ctx = canvas.getContext("2d")
+    ctx.lineCap = 'round'
+    ctx.strokeStyle = 'black'
+    ctx.lineWidth = 2
+  }, [])
+
+  const startDrawing = (e) => {
+    const canvas = canvaRef.current
+    const rect = canvas.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+
+    isDrawing.current = true
+    lastPos.current = { x, y }
+  }
+
+  const stopDrawing = () => {
+    isDrawing.current = false
+  }
+
+  const handleMouseMove = (e) => {
+
+    const canvas = canvaRef.current
+    const rect = canvas.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+
+    cursorRef.current = { x, y }
+
+    if (socket) {
+      socket.emit('mouse_move', ({ channelId, pos: { x, y }, id: socket.id }))
     }
-    socket.on('receive-message', (message) => {
-      console.log(`message received at client: ${message}`)
-      onReceiveMessage(message)
-    })
-    console.log('messages updated:', messages)
 
-    socket.on('previous-messages', (previousMessages) => {
-      console.log('previous messages received at client:', previousMessages)
-      setPreviosMessages(previousMessages)
-    })
-
-
-    return () => {
-      socket.off('receive-message', handelReciveMessage)
+    if (isDrawing.current) {
+      onDrawing(lastPos.current, { x, y })
+      if (socket && socket.connected) {
+        console.log('emitting drawing event to server')
+        socket.emit('start_drawing', {
+          channelId,
+          lastPos: lastPos.current,
+          currentPos: { x, y }
+        })
+      } else {
+        console.warn('Socket not connected, cannot emit drawing')
+      }
     }
 
-  }, [socket])
-
-
+    lastPos.current = { x, y }
+  }
 
   return (
-    <Container className="py-5 px-2">
-      <div className='min-h-[50vh] text-black bg-amber-50/80 rounded-lg flex flex-col justify-between gap-2'>
-        <ul className='px-3 flex flex-col gap-2 mt-3 justify-end'>
-          {messages.map((m, i) => (
-            <li key={i} className='bg-white p-2 rounded-md shadow-md w-fit max-w-[70%]'>{m}</li>
-          ))}
-        </ul>
-        <div className='flex w-full self-end gap-3 p-3'>
-          <input type='text' value={msg} onChange={(e) => setMsg(e.target.value)} className='border p-3 rounded-lg w-full' />
-          <button type='button' onClick={() => {
-            onSendMessage(msg)
-            setMsg('')
-          }} className='btn bg-blue-400'>send</button>
-        </div>
+    <Container className="bg-gray-50 mx-auto border grid grid-cols-12 grid-rows-12 gap-3 p-5">
+      <div className='col-span-10 col-start-3 row-start-3 bg-white row-span-10 rounded-2xl border border-gray-200 shadow-xl relative overflow-hidden'>
+        <canvas
+          ref={canvaRef}
+          className='rounded-2xl w-full h-full'
+          onMouseDown={startDrawing}
+          onMouseMove={handleMouseMove}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+        ></canvas>
+        <RemoteMouseMove />
       </div>
     </Container>
   )

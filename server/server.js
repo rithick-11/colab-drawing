@@ -2,7 +2,8 @@ const express = require('express')
 const http = require('http')
 const { Server } = require('socket.io')
 const cors = require('cors')
-const dotenv =  require('dotenv')
+const dotenv = require('dotenv')
+const { joinChannel, onUserDisconnect, onMouseMove } = require('./rooms')
 
 dotenv.config()
 
@@ -15,10 +16,11 @@ let messages = []
 app.use(cors())
 
 const server = http.createServer(app)
+
 const io = new Server(server, {
-    cors:{
-        origin:"*",
-        methods:["GET","POST"]
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
     }
 })
 
@@ -33,29 +35,38 @@ app.get("/", (req, res) => {
 io.on('connect', (socket) => {
     console.log(`connection sucessfull cId:${socket.id}`)
 
-    socket.on('join-channel', (channelId) =>{
-        socket.join(channelId)
-        socket.emit('previous-messages', messages)
-        console.log(`previous messages sent to `, messages)
-        console.log(`socket joined channel: ${channelId}`)
-        console.log(`socket joined channel`)
+    socket.on('join-channel', (channelId) => {
+        joinChannel(socket, channelId,)
     })
 
-    socket.on('send-message', ({channelId, message}) => {
+
+
+
+    socket.on('send-message', ({ channelId, message }) => {
         console.log(`message received at server: ${message} for channel: ${channelId}`)
         messages.push(message)
         io.to(channelId).emit('receive-message', message)
     })
 
-    
+    socket.on('mouse_move', ({ channelId, pos, id }) => {
+        onMouseMove(socket, pos)
+    })
+
+
+    socket.on("start_drawing", ({ channelId, lastPos, currentPos }) => {
+        socket.to(channelId).emit("someone_drawing", { lastPos, currentPos })
+        io.emit('upadate', ({ currentPos }))
+    })
+
 
     socket.on('disconnect', () => {
         console.log(`socket disconnected cId:${socket.id}`)
+        onUserDisconnect(socket)
     })
 
 })
 
 
-server.listen(PORT, '0.0.0.0' ,() => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`server running at http://localhost:${PORT}`)
 })
