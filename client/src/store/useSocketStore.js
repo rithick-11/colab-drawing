@@ -7,6 +7,30 @@ export const useSocketStore = create((set, get) => ({
     channelId: null,
     messages: [],
     users: [],
+    whiteBoardActions: [],
+    bruseSize: 2,
+    brushColor: 'black',
+    tool: 'brush',
+
+    actionCount: 0,
+
+    undo: () => {
+        set({ actionCount: get().actionCount - 1 })
+    },
+
+    setTool: (tool) => {
+        set({ tool: tool })
+    },
+
+    setActionsCount: () => {
+        set({ actionCount: get().actionCount + 1 })
+    },
+
+    setBrushColor: (color) => {
+        set({ brushColor: color })
+    },
+
+
     connect: () => {
         if (get().isConnected) return
 
@@ -47,5 +71,14 @@ export const useSocketStore = create((set, get) => ({
 
     setCurrenChannelState: (channel_state) => {
         set({ ...channel_state })
+    },
+
+    addWhiteBoardAction: (action) => {
+        set({ whiteBoardActions: [...get().whiteBoardActions, action] })
+        console.log(get().whiteBoardActions)
+    },
+
+    setBruseSize: (size) => {
+        set({ bruseSize: size })
     }
 }))

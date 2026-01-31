@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useSocketStore } from '../store/useSocketStore'
 
-const ChatBox = () => {
+const ChatBox = ({className}) => {
 
     const { messages, onSendMessage, socket, onReceiveMessage, setPreviosMessages } = useSocketStore()
 
@@ -43,7 +43,7 @@ const ChatBox = () => {
 
 
     return (
-        <div className='min-h-[50vh] text-black bg-amber-50/80 rounded-lg flex flex-col justify-between gap-2'>
+        <div className={`${className} border`}>
             <ul className='px-3 flex flex-col gap-2 mt-3 justify-end'>
                 {messages.map((m, i) => (
                     <li key={i} className='bg-white p-2 rounded-md shadow-md w-fit max-w-[70%]'>{m}</li>

@@ -1,12 +1,13 @@
 import React, { useRef, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { ChatBox, Container, RemoteMouseMove } from '../components'
+import { ChatBox, Container, RemoteMouseMove, ToolBar } from '../components'
 import { useSocketStore } from '../store/useSocketStore'
 import { socket } from '../socket/socket'
+import { useState } from 'react'
 
 const Canvaschannel = () => {
 
-  const { joinChannel, connect, users, setCurrenChannelState } = useSocketStore()
+  const { joinChannel, connect, addWhiteBoardAction, setCurrenChannelState, bruseSize, brushColor, tool, actionCount, setActionsCount } = useSocketStore()
   const { channelId } = useParams()
 
   const canvaRef = useRef(null)
@@ -14,19 +15,23 @@ const Canvaschannel = () => {
   const isDrawing = useRef(false)
   const lastPos = useRef({ x: 0, y: 0 })
 
-  const onDrawing = (lastPos, currentPos) => {
+  const [listenCurrentAction, setListenCurrentAction] = useState([])
+
+  const onDrawing = (lastPos, currentPos, bruseSize, brushColor, tool) => {
     const canvas = canvaRef.current
     if (!canvas) return
 
     const ctx = canvas.getContext('2d')
+    ctx.lineWidth = bruseSize
+    ctx.strokeStyle = brushColor
+    if (tool == 'eraser') {
+      ctx.strokeStyle = 'white'
+    }
     ctx.beginPath()
     ctx.moveTo(lastPos.x, lastPos.y)
     ctx.lineTo(currentPos.x, currentPos.y)
     ctx.stroke()
   }
-
-  console.log(users, 'users')
-
 
   useEffect(() => {
     connect()
@@ -34,9 +39,8 @@ const Canvaschannel = () => {
     joinChannel(channelId)
     document.title = `Canvas - ${channelId}`
 
-    const handleRemoteDrawing = ({ lastPos, currentPos }) => {
-      console.log('someone is drawing', lastPos, currentPos)
-      onDrawing(lastPos, currentPos)
+    const handleRemoteDrawing = (storck) => {
+      onDrawing(storck.lastPos, storck.currentPos, storck.bruseSize, storck.brushColor, storck.tool)
     }
 
     const handleRemoteUserMouseMove = (current_channel_state) => {
@@ -71,9 +75,6 @@ const Canvaschannel = () => {
     }
   }, [])
 
-
-
-
   useEffect(() => {
     const canvas = canvaRef.current
     if (!canvas) return
@@ -99,6 +100,9 @@ const Canvaschannel = () => {
 
   const stopDrawing = () => {
     isDrawing.current = false
+    addWhiteBoardAction(listenCurrentAction)
+    setListenCurrentAction([])
+    setActionsCount()
   }
 
   const handleMouseMove = (e) => {
@@ -115,13 +119,15 @@ const Canvaschannel = () => {
     }
 
     if (isDrawing.current) {
-      onDrawing(lastPos.current, { x, y })
+      onDrawing(lastPos.current, { x, y }, bruseSize, brushColor, tool)
+      setListenCurrentAction(pre => [...pre, { lastPos: lastPos.current, currentPos: { x, y }, bruseSize, brushColor, tool }])
       if (socket && socket.connected) {
         console.log('emitting drawing event to server')
         socket.emit('start_drawing', {
           channelId,
           lastPos: lastPos.current,
-          currentPos: { x, y }
+          currentPos: { x, y },
+          bruseSize, brushColor, tool
         })
       } else {
         console.warn('Socket not connected, cannot emit drawing')
@@ -133,7 +139,7 @@ const Canvaschannel = () => {
 
   return (
     <Container className="bg-gray-50 mx-auto border grid grid-cols-12 grid-rows-12 gap-3 p-5">
-      <div className='col-span-10 col-start-3 row-start-3 bg-white row-span-10 rounded-2xl border border-gray-200 shadow-xl relative overflow-hidden'>
+      <div className='col-span-12 row-start-3 bg-white row-span-10 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden'>
         <canvas
           ref={canvaRef}
           className='rounded-2xl w-full h-full'
@@ -144,6 +150,8 @@ const Canvaschannel = () => {
         ></canvas>
         <RemoteMouseMove />
       </div>
+      <ToolBar className='col-start-3 col-span-7 row-span-2 rounded-2xl border border-gray-200 shadow-md bg-white' />
+      {/* {1 == 1 ? <ChatBox className={`absolute border-amber-300 min-h-[70vh] top-[30%] text-black`} /> : null} */}
     </Container>
   )
 }

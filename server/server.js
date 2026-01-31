@@ -53,9 +53,8 @@ io.on('connect', (socket) => {
     })
 
 
-    socket.on("start_drawing", ({ channelId, lastPos, currentPos }) => {
-        socket.to(channelId).emit("someone_drawing", { lastPos, currentPos })
-        io.emit('upadate', ({ currentPos }))
+    socket.on("start_drawing", ({ channelId, ...storck }) => {
+        socket.to(channelId).emit("someone_drawing", storck)
     })
 
 

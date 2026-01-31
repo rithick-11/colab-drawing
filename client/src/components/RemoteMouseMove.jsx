@@ -9,9 +9,6 @@ const RemoteMouseMove = () => {
     return (
         <>
             {users.map(({ id, name, pos, color }) => {
-
-                console.log(color)
-
                 if (id === socket.id) return null
 
                 return <div
