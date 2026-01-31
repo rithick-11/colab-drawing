@@ -39,9 +39,6 @@ io.on('connect', (socket) => {
         joinChannel(socket, channelId,)
     })
 
-
-
-
     socket.on('send-message', ({ channelId, message }) => {
         console.log(`message received at server: ${message} for channel: ${channelId}`)
         messages.push(message)

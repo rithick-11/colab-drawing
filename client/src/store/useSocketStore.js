@@ -14,7 +14,7 @@ export const useSocketStore = create((set, get) => ({
 
     actionCount: 0,
 
-    undo: () => {
+    handleUndo: () => {
         set({ actionCount: get().actionCount - 1 })
     },
 
