@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { ChatBox, Container, RemoteMouseMove, ToolBar } from '../components'
+import { ChatBox, Container, RemoteMouseMove, ToolBar, UserCard } from '../components'
 import { useSocketStore } from '../store/useSocketStore'
 import { socket } from '../socket/socket'
 import { useState } from 'react'
@@ -151,6 +151,7 @@ const Canvaschannel = () => {
         <RemoteMouseMove />
       </div>
       <ToolBar className='col-start-3 col-span-7 row-span-2 rounded-2xl border border-gray-200 shadow-md bg-white' />
+      <UserCard className='col-start-10 row-span-2 rounded-2xl border border-gray-200 shadow-md col-span-3 bg-white ' />
       {/* {1 == 1 ? <ChatBox className={`absolute border-amber-300 min-h-[70vh] top-[30%] text-black`} /> : null} */}
     </Container>
   )

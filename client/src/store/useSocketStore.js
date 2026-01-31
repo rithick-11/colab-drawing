@@ -6,7 +6,7 @@ export const useSocketStore = create((set, get) => ({
     isConnected: false,
     channelId: null,
     messages: [],
-    users: [],
+    users: [{name:"rithick", color:"yellow"}],
     whiteBoardActions: [],
     bruseSize: 2,
     brushColor: 'black',
