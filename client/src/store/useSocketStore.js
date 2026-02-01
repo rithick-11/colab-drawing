@@ -11,15 +11,12 @@ export const useSocketStore = create((set, get) => ({
     bruseSize: 2,
     brushColor: 'black',
     tool: 'brush',
-
-    actionCount: 0,
-
-    handleUndo: () => {
-        set({ actionCount: get().actionCount - 1 })
+    user: {
+        name:"Loding"
     },
 
-    setTool: (tool) => {
-        set({ tool: tool })
+    setUser: (user) => {
+        set({ user })
     },
 
     setActionsCount: () => {

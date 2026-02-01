@@ -4,9 +4,11 @@ import { IoMdBrush, IoMdHelpCircleOutline, IoMdRedo, IoMdUndo } from "react-icon
 import { TbLine } from "react-icons/tb";
 import { useSocketStore } from '../store/useSocketStore';
 
+import { socket } from '../socket/socket';
+
 const ToolBar = ({ className }) => {
 
-  const { setBruseSize, bruseSize, brushColor, setBrushColor, tool, setTool, handleUndo } = useSocketStore()
+  const { setBruseSize, bruseSize, brushColor, setBrushColor, tool, setTool } = useSocketStore()
 
   const tootBarBtnClassName = "p-2 border rounded-lg hover:bg-gray-100 cursor-pointer"
 
@@ -14,9 +16,13 @@ const ToolBar = ({ className }) => {
     {
       icon: <IoMdUndo />,
       action: 'undo',
-      onClick: handleUndo
+      onClick: () => {
+        socket.emit('undo-action')
+      }
     },
-    { icon: <IoMdRedo />, action: 'redo', onClick: () => { } },
+    { icon: <IoMdRedo />, action: 'redo', onClick: () => {
+      socket.emit('redo-action')
+    } },
   ]
 
   const toolBarItems = [

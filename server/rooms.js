@@ -1,39 +1,6 @@
-import { generateUser } from "./utils.js"
+const { Channel, channels } = require("./roomState.js")
 
-class Channel {
-    channelId = null
-    messages = []
-    users = []
-
-    constructor(channelId, userId) {
-        this.channelId = channelId
-    }
-
-    onNewUser(userId) {
-        const newUser = generateUser()
-        newUser.id = userId
-        newUser.pos = { x: 0, y: 0 }
-        this.users.push(newUser)
-        return newUser
-    }
-
-    onUserDisconnect(userId) {
-        this.users = this.users.filter(user => user.id != userId)
-    }
-
-    onMouseMove(userId, pos) {
-        this.users = this.users.map(user => {
-            if (user.id == userId) {
-                user.pos = pos
-            }
-            return user
-        })
-    }
-}
-
-const channels = {}
-
-export const joinChannel = (socket, channelId) => {
+const joinChannel = (socket, channelId) => {
     socket.join(channelId)
     socket.channelId = channelId
 
@@ -45,25 +12,56 @@ export const joinChannel = (socket, channelId) => {
     } else {
         newUser = channels[channelId].onNewUser(socket.id)
     }
-    socket.emit('after_join_channel', channels[channelId])
-    socket.to(channelId).emit('joined-new-user', newUser)
+    socket.emit('after_join_channel', ({ channelState: channels[socket.channelId], user: newUser }))
+    socket.to(channelId).emit('joined-new-user', ({ channelState: channels[socket.channelId], newUser }))
 }
 
-export const onUserDisconnect = (socket) => {
+const onUserDisconnect = (socket) => {
     if (!channels[socket.channelId]) {
         console.log('channel not found')
         return
     }
-    channels[socket.channelId].onUserDisconnect(socket.id)
-    socket.to(socket.channelId).emit('user-disconnected', channels[socket.channelId])
+    const leftUser = channels[socket.channelId].onUserDisconnect(socket.id)
+    socket.to(socket.channelId).emit('user-disconnected', ({ current_channel_state: channels[socket.channelId], user: leftUser }))
     socket.leave(socket.channelId)
 }
 
-export const onMouseMove = (socket, pos) => {
+const onMouseMove = (socket, pos) => {
     if (!channels[socket.channelId]) {
         console.log('channnel not found')
         return
     }
     channels[socket.channelId].onMouseMove(socket.id, pos)
-    socket.to(socket.channelId).emit('on-remote-user-mouse-move', channels[socket.channelId])
-} 
+    const { whiteBoardActions, undoStack, ...currentState } = channels[socket.channelId]
+    socket.to(socket.channelId).emit('on-remote-user-mouse-move', currentState)
+}
+
+const onAddBoardAction = (socket, action) => {
+    if (!channels[socket.channelId]) {
+        console.log('channel not found')
+        return
+    }
+    channels[socket.channelId].onAddNewAction(action)
+}
+
+const onUndoAction = (socket) => {
+    if (!channels[socket.channelId]) {
+        console.log('channel not found')
+        return
+    }
+    channels[socket.channelId].onUndoAction()
+    socket.emit('on-undo-redo', channels[socket.channelId])
+    socket.to(socket.channelId).emit('on-undo-redo', channels[socket.channelId])
+}
+
+const onRedoAction = (socket) => {
+    if (!channels[socket.channelId]) {
+        console.log('channel not found')
+        return
+    }
+    channels[socket.channelId].onRedoAction()
+    socket.emit('on-undo-redo', channels[socket.channelId])
+    socket.to(socket.channelId).emit('on-undo-redo', channels[socket.channelId])
+}
+
+module.exports = { joinChannel, onAddBoardAction, onUserDisconnect, onMouseMove, onUndoAction, onRedoAction }

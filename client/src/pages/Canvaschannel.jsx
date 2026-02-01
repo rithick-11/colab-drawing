@@ -1,21 +1,20 @@
 import React, { useRef, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { ChatBox, Container, RemoteMouseMove, ToolBar, UserCard } from '../components'
+import { ChannelInfo, ChatBox, Container, RemoteMouseMove, ToolBar, UserCard } from '../components'
 import { useSocketStore } from '../store/useSocketStore'
 import { socket } from '../socket/socket'
-import { useState } from 'react'
+
+let currentAction = []
 
 const Canvaschannel = () => {
 
-  const { joinChannel, connect, addWhiteBoardAction, setCurrenChannelState, bruseSize, brushColor, tool, actionCount, setActionsCount } = useSocketStore()
+  const { joinChannel, connect, setCurrenChannelState, bruseSize, brushColor, tool, whiteBoardActions, setUser } = useSocketStore()
   const { channelId } = useParams()
 
   const canvaRef = useRef(null)
   const cursorRef = useRef({})
   const isDrawing = useRef(false)
   const lastPos = useRef({ x: 0, y: 0 })
-
-  const [listenCurrentAction, setListenCurrentAction] = useState([])
 
   const onDrawing = (lastPos, currentPos, bruseSize, brushColor, tool) => {
     const canvas = canvaRef.current
@@ -33,6 +32,19 @@ const Canvaschannel = () => {
     ctx.stroke()
   }
 
+  const drawingAllStorcks = (whiteBoardActions) => {
+    const canvas = canvaRef.current
+    if (!canvas) return
+
+    const ctx = canvas.getContext('2d')
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    whiteBoardActions.forEach(action => {
+      action.forEach(storck => {
+        onDrawing(storck.lastPos, storck.currentPos, storck.bruseSize, storck.brushColor, storck.tool)
+      })
+    })
+  }
+
   useEffect(() => {
     connect()
     console.log('attempting to connect to socket server')
@@ -47,13 +59,18 @@ const Canvaschannel = () => {
       setCurrenChannelState(current_channel_state)
     }
 
-    const handleAfterJoinChannel = (channel_state) => {
-      setCurrenChannelState(channel_state)
+    const handleAfterJoinChannel = ({ channelState, user }) => {
+      setCurrenChannelState(channelState)
+      setUser(user)
+      console.log('user joined:', user)
+      console.log('updated channel state:', channelState)
     }
 
     const handleOnRemoteuserDisconnect = ({ current_channel_state, user }) => {
       setCurrenChannelState(current_channel_state)
-      console.log(`user disconnected: ${user.name}`)
+      console.log('user disconnected:', user)
+      console.log('updated channel state:', current_channel_state)
+      //todo nofify left user
     }
 
     if (socket) {
@@ -61,9 +78,14 @@ const Canvaschannel = () => {
       socket.on('someone_drawing', handleRemoteDrawing)
       socket.on('on-remote-user-mouse-move', handleRemoteUserMouseMove)
       socket.on('user-disconnected', handleOnRemoteuserDisconnect)
-
-      socket.on('joined-new-user', (newUser) => {
-        console.log('new user joined:', newUser)
+      socket.on('joined-new-user', (data) => {
+        setCurrenChannelState(data.channelState)
+        console.log('new user joined', data.newUser)
+        // todo notify new user joined
+      })
+      socket.on('on-undo-redo', (data) => {
+        setCurrenChannelState(data)
+        console.log('some undo', data)
       })
     }
 
@@ -74,6 +96,10 @@ const Canvaschannel = () => {
       socket.off('after_join_channel')
     }
   }, [])
+
+  useEffect(() => {
+    drawingAllStorcks(whiteBoardActions)
+  }, [whiteBoardActions])
 
   useEffect(() => {
     const canvas = canvaRef.current
@@ -100,9 +126,8 @@ const Canvaschannel = () => {
 
   const stopDrawing = () => {
     isDrawing.current = false
-    addWhiteBoardAction(listenCurrentAction)
-    setListenCurrentAction([])
-    setActionsCount()
+    socket.emit('add-board-action', currentAction)
+    currentAction = []
   }
 
   const handleMouseMove = (e) => {
@@ -120,7 +145,7 @@ const Canvaschannel = () => {
 
     if (isDrawing.current) {
       onDrawing(lastPos.current, { x, y }, bruseSize, brushColor, tool)
-      setListenCurrentAction(pre => [...pre, { lastPos: lastPos.current, currentPos: { x, y }, bruseSize, brushColor, tool }])
+      currentAction.push({ lastPos: lastPos.current, currentPos: { x, y }, bruseSize, brushColor, tool })
       if (socket && socket.connected) {
         console.log('emitting drawing event to server')
         socket.emit('start_drawing', {
@@ -138,7 +163,7 @@ const Canvaschannel = () => {
   }
 
   return (
-    <Container className="bg-gray-50 mx-auto border grid grid-cols-12 grid-rows-12 gap-3 p-5">
+    <Container className="bg-gray-50 mx-auto border grid grid-cols-12 grid-rows-12 gap-3 p-3">
       <div className='col-span-12 row-start-3 bg-white row-span-10 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden'>
         <canvas
           ref={canvaRef}
@@ -152,6 +177,7 @@ const Canvaschannel = () => {
       </div>
       <ToolBar className='col-start-3 col-span-7 row-span-2 rounded-2xl border border-gray-200 shadow-md bg-white' />
       <UserCard className='col-start-10 row-span-2 rounded-2xl border border-gray-200 shadow-md col-span-3 bg-white ' />
+      <ChannelInfo className='bg-white col-span-2 row-span-2 col-start-1 row-start-1 rounded-2xl border border-gray-200 shadow-md' />
       {/* {1 == 1 ? <ChatBox className={`absolute border-amber-300 min-h-[70vh] top-[30%] text-black`} /> : null} */}
     </Container>
   )

@@ -3,7 +3,7 @@ const http = require('http')
 const { Server } = require('socket.io')
 const cors = require('cors')
 const dotenv = require('dotenv')
-const { joinChannel, onUserDisconnect, onMouseMove } = require('./rooms')
+const { joinChannel, onUserDisconnect, onMouseMove, onAddBoardAction, onUndoAction, onRedoAction } = require('./rooms')
 
 dotenv.config()
 
@@ -54,6 +54,17 @@ io.on('connect', (socket) => {
         socket.to(channelId).emit("someone_drawing", storck)
     })
 
+    socket.on('add-board-action', (action) => {
+        onAddBoardAction(socket, action)
+    })
+
+    socket.on('undo-action', () => {
+        onUndoAction(socket, io)
+    })
+
+    socket.on('redo-action', () => {
+        onRedoAction(socket)
+    })
 
     socket.on('disconnect', () => {
         console.log(`socket disconnected cId:${socket.id}`)
@@ -66,3 +77,5 @@ io.on('connect', (socket) => {
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`server running at http://localhost:${PORT}`)
 })
+
+module.exports = { io }
