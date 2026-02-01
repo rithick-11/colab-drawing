@@ -15,6 +15,11 @@ export const useSocketStore = create((set, get) => ({
         name:"Loding"
     },
 
+    setTool:(tool)=>{
+        set({tool})
+    },
+    
+
     setUser: (user) => {
         set({ user })
     },

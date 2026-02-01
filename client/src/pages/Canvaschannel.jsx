@@ -58,7 +58,7 @@ const Canvaschannel = () => {
   useEffect(() => {
     connect()
     console.log('attempting to connect to socket server')
-    joinChannel(channelId, username)
+    joinChannel(channelId)
     document.title = `Canvas - ${channelId}`
 
     const handleRemoteDrawing = (storck) => {
@@ -104,8 +104,6 @@ const Canvaschannel = () => {
       socket.off('on-remote-user-mouse-move')
       socket.off('user-disconnected')
       socket.off('after_join_channel')
-      socket.off('joined-new-user')
-      socket.off('on-undo-redo')
     }
   }, [])
 

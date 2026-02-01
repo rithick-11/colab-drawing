@@ -27,7 +27,7 @@ const ToolBar = ({ className }) => {
 
   const toolBarItems = [
     { icon: <IoMdBrush />, tool: 'brush' },
-    { icon: <TbLine />, tool: 'line' },
+    // { icon: <TbLine />, tool: 'line' },
     { icon: <FaEraser />, tool: 'eraser' },
   ]
 
@@ -40,7 +40,7 @@ const ToolBar = ({ className }) => {
         <div className='mt-3 space-x-2 space-y-2'>
           {/* tool bar actions */}
           {toolBarActions.map((item, index) => (
-            <button key={index} onClick={item.onClick} className={tootBarBtnClassName + " " + 'border-gray-300'}>{item.icon}</button>
+            <button key={index} onClick={item.tool} className={tootBarBtnClassName + " " + 'border-gray-300'}>{item.icon}</button>
           ))}
 
           {/* //tool bar toolitems */}
