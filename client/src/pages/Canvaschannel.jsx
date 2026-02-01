@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { ChannelInfo, ChatBox, Container, RemoteMouseMove, ToolBar, UserCard } from '../components'
 import { useSocketStore } from '../store/useSocketStore'
 import { socket } from '../socket/socket'
@@ -9,12 +9,22 @@ let currentAction = []
 const Canvaschannel = () => {
 
   const { joinChannel, connect, setCurrenChannelState, bruseSize, brushColor, tool, whiteBoardActions, setUser } = useSocketStore()
+
   const { channelId } = useParams()
+  const [searchParams] = useSearchParams()
 
   const canvaRef = useRef(null)
   const cursorRef = useRef({})
   const isDrawing = useRef(false)
   const lastPos = useRef({ x: 0, y: 0 })
+
+  const username = searchParams.get('username')
+
+  console.log(username)
+
+  if(username === '' || username === null) return <Navigate to="/" />
+
+  
 
   const onDrawing = (lastPos, currentPos, bruseSize, brushColor, tool) => {
     const canvas = canvaRef.current
@@ -48,7 +58,7 @@ const Canvaschannel = () => {
   useEffect(() => {
     connect()
     console.log('attempting to connect to socket server')
-    joinChannel(channelId)
+    joinChannel(channelId, username)
     document.title = `Canvas - ${channelId}`
 
     const handleRemoteDrawing = (storck) => {
@@ -94,6 +104,8 @@ const Canvaschannel = () => {
       socket.off('on-remote-user-mouse-move')
       socket.off('user-disconnected')
       socket.off('after_join_channel')
+      socket.off('joined-new-user')
+      socket.off('on-undo-redo')
     }
   }, [])
 

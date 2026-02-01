@@ -1,6 +1,6 @@
 const { Channel, channels } = require("./roomState.js")
 
-const joinChannel = (socket, channelId) => {
+const joinChannel = (socket, channelId, username) => {
     socket.join(channelId)
     socket.channelId = channelId
 
@@ -8,9 +8,10 @@ const joinChannel = (socket, channelId) => {
 
     if (!channels[channelId]) {
         channels[channelId] = new Channel(channelId)
-        newUser = channels[channelId].onNewUser(socket.id)
+        newUser = channels[channelId].onNewUser(socket.id, username)
+        console.log(newUser)
     } else {
-        newUser = channels[channelId].onNewUser(socket.id)
+        newUser = channels[channelId].onNewUser(socket.id, username)
     }
     socket.emit('after_join_channel', ({ channelState: channels[socket.channelId], user: newUser }))
     socket.to(channelId).emit('joined-new-user', ({ channelState: channels[socket.channelId], newUser }))

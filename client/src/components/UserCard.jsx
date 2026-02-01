@@ -5,11 +5,11 @@ import { CiLink } from "react-icons/ci";
 
 const UserCard = ({ className }) => {
 
-    const { users } = useSocketStore()
+    const { users, channelId } = useSocketStore()
 
     const onCLickInvite = () => {
         try {
-            navigator.clipboard.writeText(window.location.href)
+            navigator.clipboard.writeText(window.location.host + `?mode=invite&channelID=${channelId}`)
         } catch (err) {
             console.error('Failed to copy: ', err);
         }
@@ -30,7 +30,7 @@ const UserCard = ({ className }) => {
                             <button onClick={onCLickInvite} className='cursor-pointer text-[1rem] flex gap-1 items-center bg-blue-500 text-white px-2 rounded-sm font-semibold '><CiLink className='text-2xl' /> Invite</button>
                         </div>
                         <ul className='flex flex-wrap gap-2'>
-                            {users?.map(user => <li className={`${"h-10 w-10 text-lg font-semibold text-white rounded-full text-center flex items-center justify-center"}`} style={{ backgroundColor: user.color }}><p className=''>{user?.name[0]}</p></li>)}
+                            {users?.map(user => <li className={`${"h-10 w-10 text-lg font-semibold text-white rounded-full text-center flex items-center justify-center"}`} style={{ backgroundColor: user.color }}><p className=''>{user?.name?.charAt(0)}</p></li>)}
                         </ul>
                     </div>
 

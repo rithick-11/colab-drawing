@@ -13,8 +13,9 @@ class Channel {
         this.channelId = channelId
     }
 
-    onNewUser(userId) {
-        const newUser = generateUser()
+    onNewUser(userId, username) {
+        console.log(username)
+        const newUser = generateUser(username)
         newUser.id = userId
         newUser.pos = { x: 0, y: 0 }
         this.users.push(newUser)

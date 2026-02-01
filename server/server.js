@@ -35,8 +35,8 @@ app.get("/", (req, res) => {
 io.on('connect', (socket) => {
     console.log(`connection sucessfull cId:${socket.id}`)
 
-    socket.on('join-channel', (channelId) => {
-        joinChannel(socket, channelId,)
+    socket.on('join-channel', ({channelId, username}) => {
+        joinChannel(socket, channelId, username)
     })
 
     socket.on('send-message', ({ channelId, message }) => {

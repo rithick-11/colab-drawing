@@ -44,9 +44,9 @@ export const useSocketStore = create((set, get) => ({
         return socket
     },
 
-    joinChannel: (channelId) => {
+    joinChannel: (channelId, username) => {
         if (!socket && !channelId) return
-        socket.emit('join-channel', channelId)
+        socket.emit('join-channel', ({channelId, username}))
         set({ channelId, messages: [] })
         console.log(`joined channel: ${channelId}`)
     },
