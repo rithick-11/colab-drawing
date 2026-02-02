@@ -60,6 +60,7 @@ io.on('connect', (socket) => {
     })
 
     socket.on('undo-action', () => {
+        console.log('undo action')
         onUndoAction(socket, io)
     })
 
