@@ -3,6 +3,7 @@ import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { ChannelInfo, ChatBox, Container, RemoteMouseMove, ToolBar, UserCard } from '../components'
 import { useSocketStore } from '../store/useSocketStore'
 import { socket } from '../socket/socket'
+import { toast } from 'react-toastify'
 
 let currentAction = []
 
@@ -58,7 +59,7 @@ const Canvaschannel = () => {
   useEffect(() => {
     connect()
     console.log('attempting to connect to socket server')
-    joinChannel(channelId)
+    joinChannel(channelId, username)
     document.title = `Canvas - ${channelId}`
 
     const handleRemoteDrawing = (storck) => {
@@ -80,7 +81,7 @@ const Canvaschannel = () => {
       setCurrenChannelState(current_channel_state)
       console.log('user disconnected:', user)
       console.log('updated channel state:', current_channel_state)
-      //todo nofify left user
+      toast.info(`${user.name} disconnected`)  
     }
 
     if (socket) {
@@ -91,7 +92,7 @@ const Canvaschannel = () => {
       socket.on('joined-new-user', (data) => {
         setCurrenChannelState(data.channelState)
         console.log('new user joined', data.newUser)
-        // todo notify new user joined
+        toast.info(`${data.newUser.name} joined the channel`)
       })
       socket.on('on-undo-redo', (data) => {
         setCurrenChannelState(data)
