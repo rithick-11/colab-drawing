@@ -175,10 +175,10 @@ const Canvaschannel = () => {
 
   return (
     <Container className="bg-gray-50 mx-auto border grid grid-cols-12 grid-rows-12 gap-3 p-3">
-      <div className='col-span-12 row-start-3 bg-white row-span-10 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden'>
+      <div className='col-span-12 row-start-3 row-span-10 relative overflow-auto'>
         <canvas
           ref={canvaRef}
-          className='rounded-2xl w-full h-full'
+          className='rounded-2xl border border-gray-200 shadow-md mx-auto bg-white min-h-[680px] max-h-[680px]  min-w-6xl max-w-5xl'
           onMouseDown={startDrawing}
           onMouseMove={handleMouseMove}
           onMouseUp={stopDrawing}
