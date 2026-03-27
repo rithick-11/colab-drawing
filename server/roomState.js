@@ -1,4 +1,4 @@
-const { generateUser } = require("./utils.js")
+const { generateUser } = require("./utils.mjs")
 
 class Channel {
     channelId = null
